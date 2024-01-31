@@ -28,8 +28,7 @@ class CPU:
 
     # Fetch the instruction at the current program counter; update the PC.
     def fetch_instruction(self):
-        self.next_pc = self.program_counter + 1
-        return self.memory[self.program_counter - 1]
+        return self.memory[self.program_counter]
 
     # Decode an instruction using bitwise operators from a 32-bit integer.
     def instruction_decode(self, instr: int):
@@ -70,32 +69,37 @@ class CPU:
 
     # Add the contents of rs1 and rs2; place in rd
     def __add(self, rd: int, rs1: int, rs2: int):
-        self.registers[rd] = self.registers[rs1] + self.registers[rs2]
+        if rd != 0:
+            self.registers[rd] = self.registers[rs1] + self.registers[rs2]
 
     # Add the contents of rs1 and immed; place in rd
     def __add_i(self, rd: int, rs1: int, immed: int):
-        self.registers[rd] = self.registers[rs1] + immed
+        if rd != 0:
+            self.registers[rd] = self.registers[rs1] + immed
 
     # Compare: if rs1 == rs2, imcrement the PC by immed
     def __beq(self, rs1: int, rs2: int, immed: int):
         if self.registers[rs1] == self.registers[rs2]:
-            self.program_counter += immed
+            self.next_pc = self.program_counter + immed
 
     # Place (pc + 1) into rd, put (pc + immed) in next pc
     def __jal(self, rd: int, immed: int):
-        alu_result = self.program_counter + 1
-        self.registers[rd] = alu_result
+        if rd != 0:
+            alu_result = self.program_counter + 1
+            self.registers[rd] = alu_result
+
         self.next_pc = self.program_counter + immed
 
-    # Get the register rs1 + immed; place its contents into rd
+    # Get the memory index val(rs1) + immed; place its contents into rd
     def __lw(self, rd: int, rs1: int, immed: int):
-        eff_address = self.registers[immed + rs1]
-        self.registers[rd] = self.registers[eff_address]
+        if rd != 0:
+            eff_address = immed + self.registers[rs1]
+            self.registers[rd] = self.memory[eff_address]
 
-    # Place contents of rs1 into register (rs2 + immed)
+    # Place contents of rs1 into register (val(rs2) + immed)
     def __sw(self, rs1: int, rs2: int, immed: int):
-        eff_address = rs2 + immed
-        self.registers[eff_address] = self.registers[rs1]
+        eff_address = self.registers[rs2] + immed
+        self.memory[eff_address] = self.registers[rs1]
 
     def __return(self):
         sys.exit()
